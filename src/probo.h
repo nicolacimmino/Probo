@@ -26,6 +26,8 @@ Stream *proboOutputStream = NULL;
 
 bool proboHaltOnError;
 
+uint16_t testCount = 0;
+
 /**
  * Initialise Probo.
  * We provide here a reference to an output stream (e.g. Serial) and some basic config.
@@ -42,6 +44,7 @@ void proboInit(Stream *outputStream, bool haltOnError = true)
 void proboFailed()
 {
     proboOutputStream->println("ERROR");
+
     while (proboHaltOnError)
     {
         delay(1000);
@@ -59,25 +62,64 @@ void proboPassed()
 /**
  * Print an info message.
  */
-void proboInfo(const char *message)
+void startTest(const char *message)
 {
+    testCount++;
+    proboOutputStream->print(testCount);
+    proboOutputStream->print(") ");
     proboOutputStream->println(message);
 }
 
 /**
  * Assert condition to be true.
  */
-void proboAssert(bool condition, const char *message)
+void proboAssertTrue(bool condition, const char *message)
 {
-    if (!condition)
+    proboOutputStream->print(message);
+
+    for (uint8_t ix = 0; ix < 50 - strlen(message); ix++)
     {
-        proboOutputStream->print("Failed asserting: ");
-        proboOutputStream->println(message);
-        proboFailed();
+        proboOutputStream->print(".");
     }
 
-    proboOutputStream->print(message);
-    proboOutputStream->println(" OK");
+    if (!condition)
+    {
+        proboFailed();
+
+        return;
+    }
+
+    proboPassed();
+}
+
+/**
+ * Assert condition to be false.
+ */
+void proboAssertFalse(bool condition, const char *message)
+{
+    proboAssertTrue(!condition, message);
+}
+
+void proboAssertEquals(uint8_t expected, uint8_t actual, char *message)
+{
+    char fullMessage[64];
+    sprintf(fullMessage, "%s %i equals %i", message, expected, actual);
+
+    proboAssertTrue(expected == actual, fullMessage);
+}
+
+void proboAssertBuffersEqual(uint8_t *expected, uint8_t *actual, uint8_t bufLength, char *message)
+{
+    char fullMessage[64];
+
+    for (uint8_t ix = 0; ix < bufLength; ix++)
+    {
+        uint8_t expectedValue = expected[ix];
+        uint8_t actualValue = actual[ix];
+        sprintf(fullMessage, "%s at position %02i - %i equals %i", message, ix, expectedValue, actualValue);
+
+        proboAssertTrue(expectedValue == actualValue, fullMessage);
+    }
 }
 
 /**
