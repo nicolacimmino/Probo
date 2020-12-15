@@ -22,11 +22,14 @@
 #ifndef __PROBO_H__
 #define __PROBO_H__
 
+#define PROBO_TEXT_AREA_WIDTH 50
+
 Stream *proboOutputStream = NULL;
 
 bool proboHaltOnError;
 
 uint16_t testCount = 0;
+uint16_t errorsCount = 0;
 
 /**
  * Initialise Probo.
@@ -38,6 +41,25 @@ void proboInit(Stream *outputStream, bool haltOnError = true)
     proboHaltOnError = haltOnError;
 }
 
+void proboFinalise()
+{
+    for (uint8_t ix = 0; ix < PROBO_TEXT_AREA_WIDTH; ix++)
+    {
+        proboOutputStream->print("=");
+    }
+    proboOutputStream->println("");
+
+    if(errorsCount == 0) {
+        proboOutputStream->println("All tests passed.");
+        return;
+    }
+
+    char buffer[64];
+    sprintf(buffer, "Tests failed: %i/%i", errorsCount, testCount);
+
+    proboOutputStream->println(buffer);
+}
+
 /**
  * Test failure.
  */
@@ -45,6 +67,8 @@ void proboFailed()
 {
     proboOutputStream->println("ERROR");
 
+    errorsCount++;
+    
     while (proboHaltOnError)
     {
         delay(1000);
@@ -77,7 +101,7 @@ void proboAssertTrue(bool condition, const char *message)
 {
     proboOutputStream->print(message);
 
-    for (uint8_t ix = 0; ix < 50 - strlen(message); ix++)
+    for (uint8_t ix = 0; ix < PROBO_TEXT_AREA_WIDTH - strlen(message); ix++)
     {
         proboOutputStream->print(".");
     }
