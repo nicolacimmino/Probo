@@ -132,6 +132,14 @@ void proboAssertEquals(uint8_t expected, uint8_t actual, char *message)
     proboAssertTrue(expected == actual, fullMessage);
 }
 
+void proboAssertEquals(char *expected, char *actual, char *message)
+{
+    char fullMessage[64];
+    sprintf(fullMessage, "%s %s equals %s", message, expected, actual);
+
+    proboAssertTrue(strcmp(expected,actual) == 0, fullMessage);
+}
+
 void proboAssertBuffersEqual(uint8_t *expected, uint8_t *actual, uint8_t bufLength, char *message)
 {
     char fullMessage[64];
